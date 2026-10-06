@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Il Mago delle Operazioni - Classe Quinta Primaria</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Fredoka -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        fredoka: ['Fredoka', 'sans-serif'],
+                    },
+                    colors: {
+                        opPlus: '#10B981',    /* Verde per addizione */
+                        opMinus: '#F59E0B',   /* Arancione per sottrazione */
+                        opMultiply: '#8B5CF6',/* Viola per moltiplicazione */
+                        opDivide: '#3B82F6',  /* Blu per divisione */
+                    },
+                    boxShadow: {
+                        'fun': '0 8px 0px 0px rgba(0, 0, 0, 0.15)',
+                        'fun-lg': '0 12px 0px 0px rgba(0, 0, 0, 0.15)',
+                        'fun-active': '0 2px 0px 0px rgba(0, 0, 0, 0.15)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Fredoka', sans-serif;
+            background: linear-gradient(135deg, #e0f2fe 0%, #fef3c7 50%, #fbcfe8 100%);
+            min-height: 100vh;
+            user-select: none;
+        }
+
+        .bounce-hover {
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .bounce-hover:hover {
+            transform: scale(1.05) translateY(-4px);
+        }
+        .bounce-hover:active {
+            transform: scale(0.98) translateY(2px);
+        }
+
+        .pulse-slow {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen justify-between p-2 sm:p-4 text-slate-800">
+
+    <!-- Navigation / Header Bar -->
+    <header class="max-w-5xl mx-auto w-full bg-white/90 backdrop-blur-md rounded-3xl p-4 shadow-fun mb-4 flex flex-wrap justify-between items-center gap-3 border-4 border-amber-300">
+        <div class="flex items-center space-x-3">
+            <div class="bg-amber-400 p-2 sm:p-3 rounded-2xl shadow-inner text-2xl sm:text-3xl">
+                🧙‍♂️
+            </div>
+            <div>
+                <h1 class="text-xl sm:text-2xl font-bold text-amber-900 tracking-wide leading-tight">Mago delle Operazioni • Classe 5ª</h1>
+                <p class="text-xs sm:text-sm text-amber-700 font-medium">Problemi con decimali, frazioni e grandi numeri!</p>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-3 sm:space-x-4 ml-auto">
+            <!-- Score Counter -->
+            <div class="bg-emerald-100 border-2 border-emerald-400 px-3 py-1.5 rounded-2xl flex items-center space-x-2">
+                <span class="text-xl sm:text-2xl">⭐</span>
+                <div class="text-left">
+                    <span class="block text-[10px] uppercase font-bold text-emerald-600 leading-none">Punti</span>
+                    <span id="score-display" class="text-lg sm:text-xl font-bold text-emerald-800 leading-none">0</span>
+                </div>
+            </div>
+
+            <!-- Speech Toggle Button -->
+            <button id="tts-toggle-btn" onclick="toggleSpeech()" class="bg-indigo-100 border-2 border-indigo-400 p-2 sm:px-3 sm:py-2 rounded-2xl flex items-center space-x-1.5 hover:bg-indigo-200 transition" title="Attiva/Disattiva Lettura">
+                <span id="tts-icon" class="text-xl">🔊</span>
+                <span class="hidden sm:inline text-xs font-bold text-indigo-700">Audio ON</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="max-w-5xl mx-auto w-full flex-grow flex flex-col gap-4">
+        
+        <!-- Filter Tabs (Difficulties) -->
+        <div class="flex justify-center space-x-2 sm:space-x-4 bg-white/60 p-1.5 rounded-2xl backdrop-blur-sm self-center shadow-sm">
+            <button onclick="setFilter('all')" id="filter-all" class="filter-btn active px-3 sm:px-5 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition bg-indigo-600 text-white shadow-md">
+                🎯 Tutti i Problemi
+            </button>
+            <button onclick="setFilter('single')" id="filter-single" class="filter-btn px-3 sm:px-5 py-1.5 rounded-xl text-xs sm:text-sm font-bold text-slate-600 hover:bg-white/80 transition">
+                🟢 1 Operazione
+            </button>
+            <button onclick="setFilter('multi')" id="filter-multi" class="filter-btn px-3 sm:px-5 py-1.5 rounded-xl text-xs sm:text-sm font-bold text-slate-600 hover:bg-white/80 transition">
+                🚀 2 Operazioni (Frazioni e Passaggi)
+            </button>
+        </div>
+
+        <!-- Problem Card Container -->
+        <div class="bg-white rounded-3xl p-4 sm:p-6 shadow-fun-lg border-4 border-indigo-200 flex flex-col md:flex-row gap-6 items-stretch relative overflow-hidden">
+            
+            <!-- Left Side: Dynamic Illustration & Visual Theme -->
+            <div class="w-full md:w-5/12 bg-indigo-50/70 rounded-2xl p-4 border-2 border-indigo-100 flex flex-col items-center justify-between min-h-[240px] relative">
+                <!-- Level Badge -->
+                <div id="problem-badge" class="absolute top-3 left-3 bg-indigo-500 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow">
+                    Classe 5ª
+                </div>
+
+                <!-- Problem Number Indicator -->
+                <div id="problem-counter" class="absolute top-3 right-3 text-xs font-bold text-indigo-400 bg-white px-2 py-0.5 rounded-md border border-indigo-100">
+                    1 / 8
+                </div>
+
+                <!-- Central SVG Dynamic Illustration Box -->
+                <div id="illustration-box" class="w-full flex-grow flex items-center justify-center my-2 p-2">
+                    <!-- SVG populated via JS -->
+                </div>
+
+                <!-- Illustration Caption -->
+                <div id="illustration-caption" class="text-xs text-center font-medium text-slate-500 bg-white/80 px-3 py-1 rounded-xl border border-indigo-100 w-full">
+                    Osserva l'immagine per aiutarti!
+                </div>
+            </div>
+
+            <!-- Right Side: Problem Text & Interactive Buttons -->
+            <div class="w-full md:w-7/12 flex flex-col justify-between gap-4">
+                
+                <!-- Problem Text Box -->
+                <div class="bg-amber-50/60 border-2 border-amber-200 rounded-2xl p-4 relative">
+                    <div class="flex justify-between items-start gap-2 mb-2">
+                        <h2 id="problem-title" class="text-lg sm:text-xl font-bold text-amber-900">
+                            Caricamento problema...
+                        </h2>
+                        <!-- Text To Speech Button -->
+                        <button onclick="readCurrentProblemText()" class="bg-amber-200 hover:bg-amber-300 text-amber-900 p-2 rounded-xl text-xs font-bold flex items-center gap-1 transition bounce-hover shrink-0" title="Ascolta il problema">
+                            🔊 <span class="hidden sm:inline">Leggi</span>
+                        </button>
+                    </div>
+
+                    <p id="problem-text" class="text-base sm:text-lg text-slate-700 font-medium leading-relaxed">
+                        Testo del problema in caricamento...
+                    </p>
+                </div>
+
+                <!-- Answer Sequence Slots Area -->
+                <div class="bg-slate-50 rounded-2xl p-3 border-2 border-slate-200 flex flex-col gap-2">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-500">
+                        Indica le operazioni da svolgere <span id="sequence-hint-text" class="text-indigo-600 font-normal">(In ordine):</span>
+                    </span>
+
+                    <div id="slots-container" class="flex flex-wrap items-center justify-start gap-3 min-h-[56px] p-1">
+                        <!-- Dynamic Slots JS insertion -->
+                    </div>
+                </div>
+
+                <!-- Operations Selector Pad -->
+                <div>
+                    <span class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
+                        Seleziona l'operazione corretta:
+                    </span>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                        
+                        <!-- PLUS -->
+                        <button onclick="selectOperation('+')" class="op-btn bounce-hover bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white p-3 rounded-2xl shadow-fun border-b-4 border-emerald-700 flex flex-col items-center justify-center transition">
+                            <span class="text-2xl sm:text-3xl font-bold leading-none">+</span>
+                            <span class="text-[11px] font-bold tracking-wide mt-1 opacity-90">ADDIZIONE</span>
+                        </button>
+
+                        <!-- MINUS -->
+                        <button onclick="selectOperation('-')" class="op-btn bounce-hover bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white p-3 rounded-2xl shadow-fun border-b-4 border-amber-700 flex flex-col items-center justify-center transition">
+                            <span class="text-2xl sm:text-3xl font-bold leading-none">−</span>
+                            <span class="text-[11px] font-bold tracking-wide mt-1 opacity-90">SOTTRAZIONE</span>
+                        </button>
+
+                        <!-- MULTIPLY -->
+                        <button onclick="selectOperation('×')" class="op-btn bounce-hover bg-purple-500 hover:bg-purple-600 active:bg-purple-700 text-white p-3 rounded-2xl shadow-fun border-b-4 border-purple-700 flex flex-col items-center justify-center transition">
+                            <span class="text-2xl sm:text-3xl font-bold leading-none">×</span>
+                            <span class="text-[11px] font-bold tracking-wide mt-1 opacity-90">MOLTIPLICAZIONE</span>
+                        </button>
+
+                        <!-- DIVIDE -->
+                        <button onclick="selectOperation('÷')" class="op-btn bounce-hover bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white p-3 rounded-2xl shadow-fun border-b-4 border-blue-700 flex flex-col items-center justify-center transition">
+                            <span class="text-2xl sm:text-3xl font-bold leading-none">÷</span>
+                            <span class="text-[11px] font-bold tracking-wide mt-1 opacity-90">DIVISIONE</span>
+                        </button>
+
+                    </div>
+                </div>
+
+                <!-- Bottom Action Controls -->
+                <div class="flex items-center justify-between gap-3 pt-2">
+                    <button onclick="resetSelection()" class="px-4 py-2.5 rounded-xl border-2 border-slate-300 text-slate-600 hover:bg-slate-100 font-bold text-sm transition bounce-hover">
+                        🔄 Cancella
+                    </button>
+
+                    <button id="check-btn" onclick="checkAnswer()" class="flex-grow bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-2xl shadow-fun border-b-4 border-indigo-900 text-base sm:text-lg transition bounce-hover flex items-center justify-center gap-2">
+                        <span>Verifica Risposta</span> ➔
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal Feedback Dialog -->
+    <div id="feedback-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden transition-all duration-300 opacity-0">
+        <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl border-4 border-white flex flex-col items-center text-center transform scale-95 transition-all" id="modal-card">
+            
+            <div id="modal-icon" class="text-6xl mb-3 animate-bounce">
+                🎉
+            </div>
+
+            <h3 id="modal-title" class="text-2xl sm:text-3xl font-extrabold text-slate-800 mb-2">
+                Super Corretto!
+            </h3>
+
+            <p id="modal-text" class="text-slate-600 text-sm sm:text-base font-medium mb-4">
+                Hai individuato l'operazione perfetta.
+            </p>
+
+            <!-- Explanation Box -->
+            <div id="explanation-box" class="w-full bg-indigo-50 border-2 border-indigo-200 rounded-2xl p-3 text-xs sm:text-sm text-indigo-950 font-medium text-left mb-6">
+                <!-- Explanation text -->
+            </div>
+
+            <button id="next-btn" onclick="nextProblem()" class="w-full bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white font-extrabold py-3.5 px-6 rounded-2xl shadow-fun border-b-4 border-emerald-800 text-lg transition bounce-hover">
+                Continua ➔
+            </button>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="max-w-5xl mx-auto w-full text-center py-3 text-xs font-semibold text-slate-500">
+        Progetto Didattico "Matematica con i Problemi" • Schede per la Quinta Primaria 🧠✨
+    </footer>
+
+    <script>
+        /* ---------------------------------------------------
+           DATASET PROBLEMI DIDATTICI PER LA CLASSE QUINTA
+        --------------------------------------------------- */
+        const PROBLEMS_DATA = [
+            {
+                id: 1,
+                title: "I saldi al negozio di elettronica",
+                text: "Sofia acquista un tablet che costa 245,50 € e una custodia protettiva da 18,90 €. Quanto spende complessivamente Sofia?",
+                expectedOps: ["+"],
+                category: "single",
+                badgeText: "1 Passaggio",
+                badgeColor: "bg-emerald-500",
+                svgType: "store",
+                caption: "Somma i costi espresso in numeri decimali!",
+                explanation: "Per calcolare la spesa TOTALE di due o più oggetti con numeri decimali, utilizziamo l'<b>Addizione (+)</b>."
+            },
+            {
+                id: 2,
+                title: "Il viaggio verso la montagna",
+                text: "Il tragitto totale per raggiungere la località sciistica è di 1.250 km. La famiglia di Matteo ha già percorso 835,5 km. Quanti chilometri mancano per arrivare a destinazione?",
+                expectedOps: ["-"],
+                category: "single",
+                badgeText: "1 Passaggio",
+                badgeColor: "bg-emerald-500",
+                svgType: "car",
+                caption: "Calcola la distanza rimanente!",
+                explanation: "Per trovare la quantità o distanza RIMANENTE tra il totale e la parte già percorsa, si utilizza la <b>Sottrazione (−)</b>."
+            },
+            {
+                id: 3,
+                title: "Il rifornimento del supermercato",
+                text: "Un supermercato ordina 1.500 confezioni di succo di frutta. Ogni confezione contiene 0,75 litri di succo. Quanti litri di succo sono stati ordinati in totale?",
+                expectedOps: ["×"],
+                category: "single",
+                badgeText: "1 Passaggio",
+                badgeColor: "bg-emerald-500",
+                svgType: "juice",
+                caption: "Quantità decimali che si ripetono!",
+                explanation: "Quando una quantità decimale (0,75 litri) si ripete per un numero elevato di volte (1.500), usiamo la <b>Moltiplicazione (×)</b>."
+            },
+            {
+                id: 4,
+                title: "La ripartizione dell'incasso",
+                text: "Una società sportiva ha incassato 4.800 € dalla vendita dei biglietti per un torneo. L'incasso viene suddiviso in parti uguali tra le 6 squadre partecipanti. Quanto spetta a ciascuna squadra?",
+                expectedOps: ["÷"],
+                category: "single",
+                badgeText: "1 Passaggio",
+                badgeColor: "bg-emerald-500",
+                svgType: "trophy",
+                caption: "Dividi una grande somma in parti uguali!",
+                explanation: "Quando dobbiamo distribuire o ripartire in parti uguali una grande cifra, utilizziamo la <b>Divisione (÷)</b>."
+            },
+            {
+                id: 5,
+                title: "Il fruttivendolo e le casse d'arance",
+                text: "Un fruttivendolo acquista 12 casse d'arance da 15,5 kg ciascuna. Durante il trasporto si rovinano 8,5 kg di arance. Quanti chilogrammi di arance buone gli rimangono da vendere?",
+                expectedOps: ["×", "-"],
+                category: "multi",
+                badgeText: "2 Passaggi",
+                badgeColor: "bg-purple-600",
+                svgType: "oranges",
+                caption: "Prima calcola il totale, poi togli lo scarto!",
+                explanation: "<b>Passo 1:</b> Usi la <b>Moltiplicazione (×)</b> per calcolare i kg totali nelle 12 casse.<br><b>Passo 2:</b> Usi la <b>Sottrazione (−)</b> per togliere i kg rovinati."
+            },
+            {
+                id: 6,
+                title: "La gita scolastica delle quinte",
+                text: "Per organizzare la gita scolastica, la Quinta A raccoglie 1.450 € e la Quinta B raccoglie 1.750 €. La somma totale viene divisa equamente tra i 40 alunni. Quanto paga ciascun alunno?",
+                expectedOps: ["+", "÷"],
+                category: "multi",
+                badgeText: "2 Passaggi",
+                badgeColor: "bg-purple-600",
+                svgType: "bus",
+                caption: "Somma le quote e poi dividi per gli alunni!",
+                explanation: "<b>Passo 1:</b> Usi l'<b>Addizione (+)</b> per calcolare la cifra totale raccolta dalle due classi.<br><b>Passo 2:</b> Usi la <b>Divisione (÷)</b> per dividere il totale complessivo tra i 40 alunni."
+            },
+            {
+                id: 7,
+                title: "I biglietti del teatro (Frazioni)",
+                text: "In un grande teatro ci sono 1.500 posti a sedere. Per lo spettacolo serale sono stati venduti i 4/5 dei biglietti disponibili. Quanti biglietti sono stati venduti?",
+                expectedOps: ["÷", "×"],
+                category: "multi",
+                badgeText: "2 Passaggi",
+                badgeColor: "bg-purple-600",
+                svgType: "theater",
+                caption: "Calcola i 4/5 del totale posti!",
+                explanation: "<b>Passo 1:</b> Usi la <b>Divisione (÷)</b> per dividere i 1.500 posti per il denominatore (5) per trovare 1/5.<br><b>Passo 2:</b> Usi la <b>Moltiplicazione (×)</b> per moltiplicare il risultato per il numeratore (4)."
+            },
+            {
+                id: 8,
+                title: "Il fusto d'olio dell'agriturismo",
+                text: "Un agriturismo ha 120 litri d'olio e li distribuisce equamente in 8 taniche uguali. Da una tanica vengono prelevati 3,75 litri per la cucina. Quanti litri d'olio rimangono in quella tanica?",
+                expectedOps: ["÷", "-"],
+                category: "multi",
+                badgeText: "2 Passaggi",
+                badgeColor: "bg-purple-600",
+                svgType: "oil",
+                caption: "Prima dividi nelle taniche, poi sottrai il consumo!",
+                explanation: "<b>Passo 1:</b> Usi la <b>Divisione (÷)</b> per scoprire quanti litri vanno in ciascuna tanica.<br><b>Passo 2:</b> Usi la <b>Sottrazione (−)</b> per togliere l'olio usato in cucina."
+            }
+        ];
+
+        /* ---------------------------------------------------
+           STATE MANAGEMENT
+        --------------------------------------------------- */
+        let activeFilter = 'all'; 
+        let currentProblemList = [...PROBLEMS_DATA];
+        let currentIndex = 0;
+        let selectedOps = [];
+        let score = 0;
+        let ttsEnabled = true;
+
+        /* ---------------------------------------------------
+           WEB AUDIO API SOUND FX GENERATOR
+        --------------------------------------------------- */
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new AudioContext();
+            }
+        }
+
+        function playSound(type) {
+            try {
+                initAudio();
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                const now = audioCtx.currentTime;
+
+                if (type === 'click') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(400, now);
+                    osc.frequency.exponentialRampToValueAtTime(800, now + 0.08);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.linearRampToValueAtTime(0, now + 0.08);
+                    osc.start(now);
+                    osc.stop(now + 0.08);
+                } else if (type === 'correct') {
+                    const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+                    notes.forEach((freq, i) => {
+                        const noteOsc = audioCtx.createOscillator();
+                        const noteGain = audioCtx.createGain();
+                        noteOsc.type = 'triangle';
+                        noteOsc.frequency.setValueAtTime(freq, now + i * 0.08);
+                        noteGain.gain.setValueAtTime(0.2, now + i * 0.08);
+                        noteGain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.08 + 0.25);
+                        noteOsc.connect(noteGain);
+                        noteGain.connect(audioCtx.destination);
+                        noteOsc.start(now + i * 0.08);
+                        noteOsc.stop(now + i * 0.08 + 0.25);
+                    });
+                } else if (type === 'wrong') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(220, now);
+                    osc.frequency.linearRampToValueAtTime(130, now + 0.25);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.linearRampToValueAtTime(0, now + 0.25);
+                    osc.start(now);
+                    osc.stop(now + 0.25);
+                }
+            } catch (e) {
+                console.log("Audio non supportato o bloccato dal browser");
+            }
+        }
+
+        /* ---------------------------------------------------
+           DYNAMIC SVG ILLUSTRATIONS GENERATOR
+        --------------------------------------------------- */
+        function getSVGIllustration(type) {
+            switch(type) {
+                case 'store':
+                    return `
+                    <svg viewBox="0 0 200 160" class="w-full h-auto max-h-48 drop-shadow-md">
+                        <!-- Tablet -->
+                        <rect x="35" y="25" width="90" height="110" rx="10" fill="#1E293B" stroke="#0F172A" stroke-width="3"/>
+                        <rect x="42" y="35" width="76" height="90" rx="4" fill="#38BDF8"/>
+                        <circle cx="80" cy="130" r="3" fill="#94A3B8"/>
+                        <!-- Price Tag Tablet -->
+                        <rect x="60" y="65" width="50" height="22" rx="6" fill="#10B981"/>
+                        <text x="85" y="80" font-size="10" font-weight="bold" fill="#FFF" text-anchor="middle">245,50 €</text>
+                        <!-- Protective Case -->
+                        <rect x="135" y="55" width="45" height="65" rx="8" fill="#F59E0B" stroke="#D97706" stroke-width="2"/>
+                        <!-- Price Tag Case -->
+                        <rect x="125" y="90" width="45" height="20" rx="5" fill="#10B981"/>
+                        <text x="147" y="104" font-size="9" font-weight="bold" fill="#FFF" text-anchor="middle">18,90 €</text>
+                    </svg>`;
+                
+                case 'car':
+                    return `
+                    <svg viewBox="0 0 200 160" class="w-full h-auto max-h-48 drop-shadow-md">
+                        <!-- Mountains in Background -->
+                        <polygon points="20,120 70,40 120,120" fill="#94A3B8"/>
+                        <polygon points="70,40 85,64 55,64" fill="#FFF"/>
+                        <polygon points="80,120 130,20 180,120" fill="#64748B"/>
+                        <polygon points="130,20 145,50 115,50" fill="#FFF"/>
+                        <!-- Road -->
+                        <rect x="0" y="120" width="200" height="30" fill="#475569"/>
+                        <line x1="0" y1="135" x2="200" y2="135" stroke="#FBBF24" stroke-width="3" stroke-dasharray="10"/>
+                        <!-- Car -->
+                        <path d="M 40,125 L 50,105 L 100,105 L 120,125 Z" fill="#EF4444"/>
+                        <circle cx="55" cy="128" r="8" fill="#1E293B"/>
+                        <circle cx="105" cy="128" r="8" fill="#1E293B"/>
+                    </svg>`;
+
+                case 'juice':
+                    return `
+                    <svg viewBox="0 0 200 160" class="w-full h-auto max-h-48 drop-shadow-md">
+                        <!-- Juice Carton 1 -->
+                        <rect x="40" y="40" width="45" height="85" rx="5" fill="#F97316" stroke="#EA580C" stroke-width="3"/>
+                        <polygon points="40,40 62.5,20 85,40" fill="#FB923C"/>
+                        <circle cx="62.5" cy="70" r="12" fill="#FEF08A"/>
+                        <text x="62.5" y="105" font-size="10" font-weight="bold" fill="#FFF" text-anchor="middle">0,75 L</text>
+                        <!-- Juice Carton 2 -->
+                        <rect x="100" y="40" width="45" height="85" rx="5" fill="#84CC16" stroke="#65A30D" stroke-width="3"/>
+                        <polygon points="100,40 122.5,20 145,40" fill="#A3E635"/>
+                        <circle cx="122.5" cy="70" r="12" fill="#FEF08A"/>
+                        <text x="122.5" y="105" font-size="10" font-weight="bold" fill="#FFF" text-anchor="middle">0,75 L</text>
+                    </svg>`;
+
+                case 'trophy':
+                    return `
+                    <svg viewBox="0 0 200 160" class="w-full h-auto max-h-48 drop-shadow-md">
+                        <!-- Base -->
+                        <rect x="70" y="120" width="60" height="20" rx="4" fill="#78350F"/>
+                        <rect x="80" y="105" width="40" height="15" fill="#D97706"/>
+                        <!-- Cup Body -->
+                        <path d="M 60,35 L 140,35 C 140,80 120,95 100,95 C 80,95 60,80 60,35 Z" fill="#FBBF24" stroke="#D97706" stroke-width="3"/>
+                        <!-- Handles -->
+                        <path d="M 60,45 C 35,45 35,75 62,75" fill="none" stroke="#FBBF24" stroke-width="6" stroke-linecap="round"/>
+                        <path d="M 140,45 C 165,45 165,75 138,75" fill="none" stroke="#FBBF24" stroke-width="6" stroke-linecap="round"/>
+                        <!-- Star -->
+                        <path d="M 100,48 L 103,57 L 112,57 L 105,62 L 107,71 L 100,66 L 93,71 L 95,62 L 88,57 L 97,57 Z" fill="#FFF"/>
+                    </svg>`;
+
+                case 'oranges':
+                    return `
+                    <svg viewBox="0 0 200 160" class="w-full h-auto max-h-48 drop-shadow-md">
+                        <!-- Wooden Crate -->
+                        <rect x="30" y="60" width="140" height="70" rx="6" fill="#D97706" stroke="#78350F" stroke-width="4"/>
+                        <line x1="30" y1="85" x2="170" y2="85" stroke="#78350F" stroke-width="3"/>
+                        <line x1="30" y1="110" x2="170" y2="110" stroke="#78350F" stroke-width="3"/>
+                        <!-- Oranges inside -->
+                        <circle cx="55" cy="55" r="16" fill="#F97316"/>
+                        <circle cx="85" cy="50" r="16" fill="#F97316"/>
+                        <circle cx="115" cy="50" r="16" fill="#F97316"/>
+                        <circle cx="145" cy="55" r="16" fill="#F97316"/>
+                        <circle cx="70" cy="38" r="15" fill="#FB923C"/>
+                        <circle cx="100" cy="35" r="16" fill="#FB923C"/>
+                        <circle cx="130" cy="38" r="15" fill="#FB923C"/>
+                    </svg>`;
+
+                case 'bus':
+                    return `
+                    <svg viewBox="0 0 200 160" class="w-full h-auto max-h-48 drop-shadow-md">
+                        <!-- Bus Body -->
+                        <rect x="20" y="40" width="160" height="75" rx="16" fill="#FBBF24" stroke="#B45309" stroke-width="4"/>
+                        <!-- Windows -->
+                        <rect x="35" y="52" width="25" height="25" rx="4" fill="#38BDF8"/>
+                        <rect x="68" y="52" width="25" height="25" rx="4" fill="#38BDF8"/>
+                        <rect x="101" y="52" width="25" height="25" rx="4" fill="#38BDF8"/>
+                        <rect x="134" y="52" width="30" height="25" rx="4" fill="#38BDF8"/>
+                        <!-- Wheels -->
+                        <circle cx="55" cy="115" r="14" fill="#1E293B"/>
+                        <circle cx="55" cy="115" r="6" fill="#94A3B8"/>
+                        <circle cx="145" cy="115" r="14" fill="#1E293B"/>
+                        <circle cx="145" cy="115" r="6" fill="#94A3B8"/>
+                    </svg>`;
+
+                case 'theater':
+                    return `
+                    <svg viewBox="0 0 200 160" class="w-full h-auto max-h-48 drop-shadow-md">
+                        <!-- Stage Curtains -->
+                        <path d="M 10,20 Q 50,80 10,140 L 10,20 Z" fill="#DC2626"/>
+                        <path d="M 190,20 Q 150,80 190,140 L 190,20 Z" fill="#DC2626"/>
+                        <path d="M 10,20 Q 100,50 190,20 L 190,10 L 10,10 Z" fill="#B91C1C"/>
+                        <!-- Theater Ticket -->
+                        <g transform="translate(50, 50) rotate(-8)">
+                            <rect x="0" y="0" width="100" height="55" rx="8" fill="#FCD34D" stroke="#D97706" stroke-width="3"/>
+                            <line x1="70" y1="0" x2="70" y2="55" stroke="#D97706" stroke-width="2" stroke-dasharray="4"/>
+                            <text x="35" y="32" font-size="14" font-weight="bold" fill="#78350F" text-anchor="middle">4/5</text>
+                        </g>
+                    </svg>`;
+
+                case 'oil':
+                    return `
+                    <svg viewBox="0 0 200 160" class="w-full h-auto max-h-48 drop-shadow-md">
+                        <!-- Oil Container / Canister -->
+                        <rect x="65" y="45" width="70" height="90" rx="10" fill="#65A30D" stroke="#3F6212" stroke-width="4"/>
+                        <rect x="85" y="25" width="30" height="20" rx="4" fill="#4D7C0F"/>
+                        <rect x="90" y="15" width="20" height="10" rx="2" fill="#1E293B"/>
+                        <!-- Handle -->
+                        <path d="M 65,60 C 45,60 45,100 65,100" stroke="#3F6212" stroke-width="5" fill="none"/>
+                        <!-- Olive Emblem -->
+                        <circle cx="100" cy="90" r="14" fill="#84CC16"/>
+                        <text x="100" y="94" font-size="9" font-weight="bold" fill="#FFF" text-anchor="middle">OLIO</text>
+                    </svg>`;
+
+                default:
+                    return `<div class="text-6xl">📐</div>`;
+            }
+        }
+
+        /* ---------------------------------------------------
+           TEXT TO SPEECH (TTS) SYSTEM
+        --------------------------------------------------- */
+        function speakText(text) {
+            if (!ttsEnabled || !('speechSynthesis' in window)) return;
+            
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'it-IT';
+            utterance.rate = 0.9;
+            utterance.pitch = 1.0;
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function toggleSpeech() {
+            ttsEnabled = !ttsEnabled;
+            const icon = document.getElementById('tts-icon');
+            const btn = document.getElementById('tts-toggle-btn');
+            
+            if (ttsEnabled) {
+                icon.textContent = '🔊';
+                btn.classList.remove('opacity-50');
+                speakText("Audio attivato!");
+            } else {
+                icon.textContent = '🔇';
+                btn.classList.add('opacity-50');
+                window.speechSynthesis.cancel();
+            }
+        }
+
+        function readCurrentProblemText() {
+            const problem = currentProblemList[currentIndex];
+            if (problem) {
+                speakText(problem.title + ". " + problem.text);
+            }
+        }
+
+        /* ---------------------------------------------------
+           CORE GAME LOGIC
+        --------------------------------------------------- */
+        function initApp() {
+            setFilter('all');
+        }
+
+        function setFilter(filterType) {
+            activeFilter = filterType;
+            
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('bg-indigo-600', 'text-white', 'shadow-md');
+                btn.classList.add('text-slate-600');
+            });
+            
+            const activeBtn = document.getElementById(`filter-${filterType}`);
+            if (activeBtn) {
+                activeBtn.classList.add('bg-indigo-600', 'text-white', 'shadow-md');
+                activeBtn.classList.remove('text-slate-600');
+            }
+
+            if (filterType === 'all') {
+                currentProblemList = [...PROBLEMS_DATA];
+            } else {
+                currentProblemList = PROBLEMS_DATA.filter(p => p.category === filterType);
+            }
+
+            currentIndex = 0;
+            loadProblem();
+        }
+
+        function loadProblem() {
+            selectedOps = [];
+            
+            if (currentProblemList.length === 0) return;
+
+            const problem = currentProblemList[currentIndex];
+
+            document.getElementById('problem-title').textContent = problem.title;
+            document.getElementById('problem-text').textContent = problem.text;
+            
+            const badge = document.getElementById('problem-badge');
+            badge.textContent = problem.badgeText;
+            badge.className = `absolute top-3 left-3 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow ${problem.badgeColor}`;
+
+            document.getElementById('problem-counter').textContent = `${currentIndex + 1} / ${currentProblemList.length}`;
+
+            document.getElementById('illustration-box').innerHTML = getSVGIllustration(problem.svgType);
+            document.getElementById('illustration-caption').textContent = problem.caption;
+
+            renderSlots();
+
+            if (ttsEnabled) {
+                setTimeout(() => readCurrentProblemText(), 400);
+            }
+        }
+
+        function renderSlots() {
+            const problem = currentProblemList[currentIndex];
+            const container = document.getElementById('slots-container');
+            container.innerHTML = '';
+
+            const reqCount = problem.expectedOps.length;
+
+            for (let i = 0; i < reqCount; i++) {
+                const isFilled = i < selectedOps.length;
+                const opValue = isFilled ? selectedOps[i] : '?';
+
+                const slot = document.createElement('div');
+                
+                let colorClasses = "bg-white border-dashed border-2 border-slate-300 text-slate-400";
+                
+                if (isFilled) {
+                    colorClasses = getOpColorStyle(opValue);
+                }
+
+                slot.className = `flex items-center justify-center font-extrabold text-xl sm:text-2xl h-12 w-16 sm:h-14 sm:w-20 rounded-2xl shadow-sm transition-all transform ${colorClasses} ${isFilled ? 'scale-105 border-solid' : ''}`;
+                
+                if (reqCount > 1) {
+                    slot.innerHTML = `
+                        <div class="flex flex-col items-center">
+                            <span class="text-[9px] uppercase font-bold opacity-75 leading-none mb-0.5">Passo ${i+1}</span>
+                            <span>${opValue}</span>
+                        </div>
+                    `;
+                } else {
+                    slot.textContent = opValue;
+                }
+
+                container.appendChild(slot);
+            }
+        }
+
+        function getOpColorStyle(op) {
+            switch(op) {
+                case '+': return 'bg-emerald-500 text-white border-2 border-emerald-700 shadow-md';
+                case '-': return 'bg-amber-500 text-white border-2 border-amber-700 shadow-md';
+                case '×': return 'bg-purple-500 text-white border-2 border-purple-700 shadow-md';
+                case '÷': return 'bg-blue-500 text-white border-2 border-blue-700 shadow-md';
+                default: return 'bg-slate-200 text-slate-700';
+            }
+        }
+
+        function selectOperation(opSymbol) {
+            playSound('click');
+            const problem = currentProblemList[currentIndex];
+            const maxAllowed = problem.expectedOps.length;
+
+            if (selectedOps.length < maxAllowed) {
+                selectedOps.push(opSymbol);
+                renderSlots();
+            }
+        }
+
+        function resetSelection() {
+            playSound('click');
+            selectedOps = [];
+            renderSlots();
+        }
+
+        function checkAnswer() {
+            const problem = currentProblemList[currentIndex];
+            const expected = problem.expectedOps;
+
+            if (selectedOps.length < expected.length) {
+                playSound('wrong');
+                speakText("Scegli le operazioni necessarie prima di verificare!");
+                return;
+            }
+
+            let isCorrect = true;
+            for (let i = 0; i < expected.length; i++) {
+                if (selectedOps[i] !== expected[i]) {
+                    isCorrect = false;
+                    break;
+                }
+            }
+
+            showModal(isCorrect, problem);
+        }
+
+        function showModal(isCorrect, problem) {
+            const modal = document.getElementById('feedback-modal');
+            const card = document.getElementById('modal-card');
+            const icon = document.getElementById('modal-icon');
+            const title = document.getElementById('modal-title');
+            const text = document.getElementById('modal-text');
+            const explanation = document.getElementById('explanation-box');
+            const nextBtn = document.getElementById('next-btn');
+
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                card.classList.remove('scale-95');
+                card.classList.add('scale-100');
+            }, 10);
+
+            if (isCorrect) {
+                playSound('correct');
+                score += 10;
+                document.getElementById('score-display').textContent = score;
+
+                confetti({
+                    particleCount: 70,
+                    spread: 60,
+                    origin: { y: 0.6 }
+                });
+
+                icon.textContent = "🌟🎓";
+                title.textContent = "Eccellente!";
+                title.className = "text-2xl sm:text-3xl font-extrabold text-emerald-600 mb-2";
+                text.textContent = "Hai individuato la sequenza corretta delle operazioni!";
+                explanation.innerHTML = `💡 <b>Spiegazione Matematica:</b><br>${problem.explanation}`;
+                
+                speakText("Eccellente! Ottimo ragionamento matematico!");
+
+                nextBtn.textContent = "Prossimo Problema ➔";
+                nextBtn.className = "w-full bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white font-extrabold py-3.5 px-6 rounded-2xl shadow-fun border-b-4 border-emerald-800 text-lg transition bounce-hover";
+            } else {
+                playSound('wrong');
+                icon.textContent = "🤔💭";
+                title.textContent = "Rifletti bene!";
+                title.className = "text-2xl sm:text-3xl font-extrabold text-amber-600 mb-2";
+                text.textContent = "Rileggi con attenzione il testo ed analizza i dati!";
+                explanation.innerHTML = `💡 <b>Suggerimento Didattico:</b><br>${problem.explanation}`;
+                
+                speakText("Non è l'operazione corretta. Rifletti e riprova!");
+
+                nextBtn.textContent = "Riprova Ora 🔄";
+                nextBtn.className = "w-full bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white font-extrabold py-3.5 px-6 rounded-2xl shadow-fun border-b-4 border-amber-800 text-lg transition bounce-hover";
+            }
+        }
+
+        function nextProblem() {
+            const modal = document.getElementById('feedback-modal');
+            const card = document.getElementById('modal-card');
+
+            modal.classList.add('opacity-0');
+            card.classList.remove('scale-100');
+            card.classList.add('scale-95');
+
+            setTimeout(() => {
+                modal.classList.add('hidden');
+
+                const titleText = document.getElementById('modal-title').textContent;
+                if (titleText === "Eccellente!") {
+                    currentIndex = (currentIndex + 1) % currentProblemList.length;
+                }
+                
+                loadProblem();
+            }, 200);
+        }
+
+        window.onload = function() {
+            initApp();
+        };
+    </script>
+</body>
+</html>
